@@ -28,35 +28,41 @@ class AluTester(alu: => Alu) extends BasicTester with TestUtils {
   val sll = VecInit(rs1.zip(rs2).map { case (a, b) => toBigInt(a.toInt << (b.toInt & 0x1f)).U(xlen.W) })
   val srl = VecInit(rs1.zip(rs2).map { case (a, b) => toBigInt(a.toInt >>> (b.toInt & 0x1f)).U(xlen.W) })
   val sra = VecInit(rs1.zip(rs2).map { case (a, b) => toBigInt(a.toInt >> (b.toInt & 0x1f)).U(xlen.W) })
+  // 16 bit multiplication
+  val mul = VecInit(rs1.zip(rs2).map { case (a, b) => toBigInt((a & 0xFFFF) * (b & 0xFFFF)).U(xlen.W) })
   val out = (
     Mux(
       dut.io.alu_op === ALU_ADD,
       sum(cntr),
       Mux(
-        dut.io.alu_op === ALU_SUB,
-        diff(cntr),
+        dut.io.alu_op === ALU_MUL,
+        mul(cntr),
         Mux(
-          dut.io.alu_op === ALU_AND,
-          and(cntr),
+          dut.io.alu_op === ALU_SUB,
+          diff(cntr),
           Mux(
-            dut.io.alu_op === ALU_OR,
-            or(cntr),
+            dut.io.alu_op === ALU_AND,
+            and(cntr),
             Mux(
-              dut.io.alu_op === ALU_XOR,
-              xor(cntr),
+              dut.io.alu_op === ALU_OR,
+              or(cntr),
               Mux(
-                dut.io.alu_op === ALU_SLT,
-                slt(cntr),
+                dut.io.alu_op === ALU_XOR,
+                xor(cntr),
                 Mux(
-                  dut.io.alu_op === ALU_SLTU,
-                  sltu(cntr),
+                  dut.io.alu_op === ALU_SLT,
+                  slt(cntr),
                   Mux(
-                    dut.io.alu_op === ALU_SLL,
-                    sll(cntr),
+                    dut.io.alu_op === ALU_SLTU,
+                    sltu(cntr),
                     Mux(
-                      dut.io.alu_op === ALU_SRL,
-                      srl(cntr),
-                      Mux(dut.io.alu_op === ALU_SRA, sra(cntr), Mux(dut.io.alu_op === ALU_COPY_A, dut.io.A, dut.io.B))
+                      dut.io.alu_op === ALU_SLL,
+                      sll(cntr),
+                      Mux(
+                        dut.io.alu_op === ALU_SRL,
+                        srl(cntr),
+                        Mux(dut.io.alu_op === ALU_SRA, sra(cntr), Mux(dut.io.alu_op === ALU_COPY_A, dut.io.A, dut.io.B))
+                      )
                     )
                   )
                 )

@@ -164,7 +164,9 @@ trait TestUtils {
     EBREAK,
     ERET,
     nop,
-    rand_inst
+    rand_inst,
+    // MUL
+    Cat(Funct7.MUL, rand_rs2, rand_rs1, Funct3.MUL, rand_rd, Opcode.RTYPE),
   )
 
   def RU(funct3: UInt, rd: Int, rs1: Int, rs2: Int) =
