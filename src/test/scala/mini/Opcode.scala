@@ -63,11 +63,15 @@ object Funct3 {
   val CSRRWI = BigInt("101", 2).U(3.W)
   val CSRRSI = BigInt("110", 2).U(3.W)
   val CSRRCI = BigInt("111", 2).U(3.W)
+  
+  // M extension
+  val MUL = BigInt("000", 2).U(3.W)
 }
 
 object Funct7 {
   val U = BigInt("0000000", 2).U(7.W)
   val S = BigInt("0100000", 2).U(7.W)
+  val MUL = BigInt("0000001", 2).U(7.W)
 }
 
 object Funct12 {
