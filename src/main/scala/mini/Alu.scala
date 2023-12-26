@@ -18,6 +18,7 @@ object Alu {
   val ALU_SRA = 9.U(4.W)
   val ALU_COPY_A = 10.U(4.W)
   val ALU_COPY_B = 11.U(4.W)
+  val ALU_MUL = 12.U(4.W)
   val ALU_XXX = 15.U(4.W)
 }
 
@@ -53,7 +54,10 @@ class AluSimple(val width: Int) extends Alu {
       ALU_AND -> (io.A & io.B),
       ALU_OR -> (io.A | io.B),
       ALU_XOR -> (io.A ^ io.B),
-      ALU_COPY_A -> io.A
+      ALU_COPY_A -> io.A,
+      ALU_COPY_B -> io.B,
+      ALU_MUL -> (io.A(width / 2 - 1, 0) * io.B(width / 2 - 1, 0))
+      // ALU_MUL -> (io.A * io.B)
     )
   )
 
@@ -69,27 +73,33 @@ class AluArea(val width: Int) extends Alu {
   val shin = Mux(io.alu_op(3), io.A, Reverse(io.A))
   val shiftr = (Cat(io.alu_op(0) && shin(width - 1), shin).asSInt >> shamt)(width - 1, 0)
   val shiftl = Reverse(shiftr)
+  val mul = io.A(width / 2 - 1, 0) * io.B(width / 2 - 1, 0)
+  // val mul = io.A * io.B
 
   val out =
     Mux(
       io.alu_op === ALU_ADD || io.alu_op === ALU_SUB,
       sum,
       Mux(
-        io.alu_op === ALU_SLT || io.alu_op === ALU_SLTU,
-        cmp,
+        io.alu_op === ALU_MUL,
+        mul,
         Mux(
-          io.alu_op === ALU_SRA || io.alu_op === ALU_SRL,
-          shiftr,
+          io.alu_op === ALU_SLT || io.alu_op === ALU_SLTU,
+          cmp,
           Mux(
-            io.alu_op === ALU_SLL,
-            shiftl,
+            io.alu_op === ALU_SRA || io.alu_op === ALU_SRL,
+            shiftr,
             Mux(
-              io.alu_op === ALU_AND,
-              io.A & io.B,
+              io.alu_op === ALU_SLL,
+              shiftl,
               Mux(
-                io.alu_op === ALU_OR,
-                io.A | io.B,
-                Mux(io.alu_op === ALU_XOR, io.A ^ io.B, Mux(io.alu_op === ALU_COPY_A, io.A, io.B))
+                io.alu_op === ALU_AND,
+                io.A & io.B,
+                Mux(
+                  io.alu_op === ALU_OR,
+                  io.A | io.B,
+                  Mux(io.alu_op === ALU_XOR, io.A ^ io.B, Mux(io.alu_op === ALU_COPY_A, io.A, io.B))
+                )
               )
             )
           )
