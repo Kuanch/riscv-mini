@@ -1,6 +1,9 @@
-int add(int a, int b);
+int mul(int a, int b) {
+    int c = a * b;
+    return c;
+}
 
 int main(int argc, char** argv) {
-  int res = add(3, 2);
-  return res == 5 ? 0 : -1;
+  int r = mul(3, 2);
+  return 0;
 }
