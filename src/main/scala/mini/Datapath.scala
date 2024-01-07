@@ -152,13 +152,9 @@ class Datapath(val conf: CoreConfig) extends Module {
   val wb_rd_addr = mw_reg.inst(11, 7)
   val wb_rs1hazard = w_wb_en && rs1_addr.orR && (rs1_addr === wb_rd_addr)
   val wb_rs2hazard = w_wb_en && rs2_addr.orR && (rs2_addr === wb_rd_addr)
-  // bypass wb to ex (ALU)
-  val bypass_wb_to_ex_rs1 = wb_rs1hazard && (w_wb_sel === WB_ALU || w_wb_sel === WB_MEM)
-  val bypass_wb_to_ex_rs2 = wb_rs2hazard && (w_wb_sel === WB_ALU || w_wb_sel === WB_MEM)
-  // bypass wb to mem (SW)
-  val bypass_wb_to_mem = (wb_rd_addr === mem_rs2_addr) && w_wb_sel === WB_ALU
-  val rs1 = Mux(m_wb_sel === WB_ALU && mem_rs1hazard, em_reg.alu, Mux(bypass_wb_to_ex_rs1, regWrite, regFile.io.rdata1))
-  val rs2 = Mux(m_wb_sel === WB_ALU && mem_rs2hazard, em_reg.alu, Mux(bypass_wb_to_ex_rs2, regWrite, regFile.io.rdata2))
+  // bypass wb to ex
+  val rs1 = Mux(m_wb_sel === WB_ALU && mem_rs1hazard, em_reg.alu, Mux(wb_rs1hazard, regWrite, regFile.io.rdata1))
+  val rs2 = Mux(m_wb_sel === WB_ALU && mem_rs2hazard, em_reg.alu, Mux(wb_rs2hazard, regWrite, regFile.io.rdata2))
 
   // ALU operations
   alu.io.A := Mux(io.ctrl.A_sel === A_RS1, rs1, fe_reg.pc)
@@ -175,7 +171,7 @@ class Datapath(val conf: CoreConfig) extends Module {
   val woffset = (alu.io.sum(1) << 4.U).asUInt | (alu.io.sum(0) << 3.U).asUInt
   io.dcache.req.valid := !stall && (io.ctrl.st_type.orR || io.ctrl.ld_type.orR)
   io.dcache.req.bits.addr := daddr
-  io.dcache.req.bits.data := Mux(bypass_wb_to_mem, mw_reg.alu, rs2 << woffset)
+  io.dcache.req.bits.data := rs2 << woffset
   io.dcache.req.bits.mask := MuxLookup(Mux(stall, st_type, io.ctrl.st_type), "b0000".U)(
     Seq(ST_SW -> "b1111".U, ST_SH -> ("b11".U << alu.io.sum(1, 0)), ST_SB -> ("b1".U << alu.io.sum(1, 0)))
   )
